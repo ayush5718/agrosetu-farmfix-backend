@@ -45,6 +45,27 @@ app.get("/health", (req, res) => {
   res.status(200).send("ok");
 });
 
+
+app.get("/", (req, res) => {
+  res.json({
+    message: "Welcome to AgroSetuFarmFix API",
+    version: "1.0.0",
+    status: "running",
+    endpoints: {
+      auth: "/auth",
+      admin: "/admin",
+      dealer: "/dealer",
+      farmer: "/farmer",
+      delivery: "/delivery",
+      aiAdvisory: "/ai",
+      carbonCredits: "/carbon-credits",
+      organicFarming: "/organic-farming",
+      notifications: "/notifications",
+      health: "/health"
+    }
+  });
+});
+
 app.listen(process.env.PORT || 5000, () => {
   console.log(`AgroSetuFarmFix backend running on port ${process.env.PORT || 3000}`);
 });
