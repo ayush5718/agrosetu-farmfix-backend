@@ -2,22 +2,22 @@
 const multer = require('multer');
 const ImageKit = require('imagekit');
 
-// Initialize ImageKit (only if credentials are available)
+// Initialize ImageKit with provided credentials
 let imagekit = null;
 
-if (process.env.IMAGEKIT_PUBLIC_KEY && process.env.IMAGEKIT_PRIVATE_KEY) {
-  try {
-    imagekit = new ImageKit({
-      publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-      privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-      urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/lejhn0bpzf"
-    });
-  } catch (error) {
-    console.error('ImageKit initialization error:', error);
-    imagekit = null;
-  }
-} else {
-  console.warn('ImageKit credentials not found. Image uploads will be disabled.');
+try {
+  imagekit = new ImageKit({
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY || "public_iQC/A+7kCdKzHy7zBYmkC3ZVDqU=",
+    // TODO: Replace with your actual ImageKit private key
+    // You need to get your full private key from ImageKit dashboard
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "private_BeGqbsC5xuQ5i5Rd/U8IEKqDK9A=",
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/lejhn0bpzf"
+  });
+  console.log('✅ ImageKit initialized successfully');
+} catch (error) {
+  console.error('❌ ImageKit initialization error:', error);
+  console.warn('⚠️ ImageKit not initialized. Placeholder URLs will be used.');
+  imagekit = null;
 }
 
 // Configure multer for memory storage
