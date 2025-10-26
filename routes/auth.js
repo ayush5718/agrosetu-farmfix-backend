@@ -23,18 +23,22 @@ router.post('/register', async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create new user
-    const user = new User({
+    // Create new user - only include fields that are provided
+    const userData = {
       name,
       email,
       passwordHash,
       role,
-      mobile,
-      village,
-      tehsil,
-      district,
-      state,
-    });
+    };
+
+    // Only add optional fields if they are provided and not empty
+    if (mobile && mobile.trim()) userData.mobile = mobile;
+    if (village && village.trim()) userData.village = village;
+    if (tehsil && tehsil.trim()) userData.tehsil = tehsil;
+    if (district && district.trim()) userData.district = district;
+    if (state && state.trim()) userData.state = state;
+
+    const user = new User(userData);
 
     await user.save();
 
@@ -52,7 +56,18 @@ router.post('/register', async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: 'Internal server error', error: error.message });
+    
+    // Handle specific MongoDB errors
+    if (error.code === 11000) {
+      // Duplicate key error
+      const field = Object.keys(error.keyPattern || {})[0];
+      return res.status(400).json({ 
+        message: `An account with this ${field} already exists. Please use a different ${field} or try logging in.` 
+      });
+    }
+    
+    // Generic error
+    res.status(500).json({ message: 'Internal server error. Please try again later.' });
   }
 });
 
