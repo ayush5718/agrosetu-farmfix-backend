@@ -10,7 +10,7 @@ try {
     publicKey: process.env.IMAGEKIT_PUBLIC_KEY || "public_iQC/A+7kCdKzHy7zBYmkC3ZVDqU=",
     // TODO: Replace with your actual ImageKit private key
     // You need to get your full private key from ImageKit dashboard
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "private_BeGqbsC5xuQ5i5Rd/U8IEKqDK9A=",
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "private_BeGqbsC5xu******************",
     urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/lejhn0bpzf"
   });
   console.log('✅ ImageKit initialized successfully');

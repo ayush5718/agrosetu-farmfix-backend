@@ -76,6 +76,51 @@ router.post('/register', upload.fields([
   }
 });
 
+// Delete shops by IDs
+router.delete('/delete', async (req, res) => {
+  try {
+    const { shopIds } = req.body;
+    
+    if (!shopIds || !Array.isArray(shopIds) || shopIds.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Shop IDs are required and must be an array' 
+      });
+    }
+
+    const dealerId = req.user._id;
+    
+    // Find all shops belonging to this dealer
+    const shops = await Shop.find({ 
+      _id: { $in: shopIds },
+      shopOwnerId: dealerId 
+    });
+
+    if (shops.length !== shopIds.length) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Some shops not found or you do not have permission to delete them' 
+      });
+    }
+
+    // Delete the shops
+    await Shop.deleteMany({ _id: { $in: shopIds } });
+
+    res.json({ 
+      success: true, 
+      message: `${shopIds.length} shop(s) deleted successfully`,
+      deletedCount: shopIds.length 
+    });
+  } catch (error) {
+    console.error('Delete shops error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error',
+      error: error.message 
+    });
+  }
+});
+
 // Get all shops for logged-in dealer
 router.get('/list', async (req, res) => {
   try {
