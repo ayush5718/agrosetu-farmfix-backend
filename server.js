@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const app = express();
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const adminFarmerRoutes = require('./routes/adminRoutes');
 const dealerRoutes = require('./routes/dealer');
 const farmerRoutes = require('./routes/farmer');
 const farmerProfileRoutes = require('./routes/farmerProfile');
@@ -37,6 +38,7 @@ job.start();
 // Routes
 app.use('/auth', authRoutes);
 app.use('/admin', authMiddleware, adminRoutes);
+app.use('/admin/farmers', authMiddleware, adminFarmerRoutes);
 app.use('/dealer', authMiddleware, dealerRoutes);
 app.use('/farmer', authMiddleware, farmerRoutes);
 app.use('/farmer', authMiddleware, farmerProfileRoutes);
