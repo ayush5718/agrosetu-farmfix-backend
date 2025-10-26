@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   mobile: { type: String, required: true },
   passwordHash: { type: String, required: true },
   role: { type: String, enum: ['admin', 'dealer', 'farmer'], required: true },
+  profilePicture: { type: String },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
 });
