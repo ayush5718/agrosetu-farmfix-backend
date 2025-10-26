@@ -3,9 +3,10 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   name: String,
-  mobile: { type: String, unique: true },
+  email: { type: String, unique: true, required: true },
+  mobile: { type: String },
   role: { type: String, enum: ['admin', 'dealer', 'farmer', 'delivery'], required: true },
-  passwordHash: String, // For simplicity; can use OTP tokens too
+  passwordHash: String,
   village: String,
   tehsil: String,
   district: String,
