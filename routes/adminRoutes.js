@@ -2,6 +2,7 @@ const express = require('express');
 const User = require('../models/Users');
 const FarmerProfile = require('../models/FarmerProfile');
 const DealerProfile = require('../models/DealerProfile');
+const Shop = require('../models/Shop');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const router = express.Router();
 
@@ -187,6 +188,117 @@ router.patch('/dealers/:dealerId/status', authMiddleware, roleMiddleware(['admin
     });
   } catch (error) {
     console.error('Error updating dealer status:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error', 
+      error: error.message 
+    });
+  }
+});
+
+// Get all shops for admin with dealer details
+router.get('/shops', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+  try {
+    const { status, category } = req.query;
+    
+    // Build query
+    const query = {};
+    if (status) {
+      query.status = status;
+    }
+    
+    // Fetch shops with dealer details
+    const shops = await Shop.find(query)
+      .populate('shopOwnerId', 'name email mobile profilePicture')
+      .sort({ createdAt: -1 });
+    
+    res.json({ 
+      success: true, 
+      shops: shops,
+      totalCount: shops.length,
+      statusCounts: {
+        pending: await Shop.countDocuments({ status: 'pending' }),
+        processing: await Shop.countDocuments({ status: 'processing' }),
+        verified: await Shop.countDocuments({ status: 'verified' }),
+        rejected: await Shop.countDocuments({ status: 'rejected' }),
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching shops:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error', 
+      error: error.message 
+    });
+  }
+});
+
+// Get shop details by ID (admin only)
+router.get('/shops/:shopId', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+  try {
+    const { shopId } = req.params;
+    
+    const shop = await Shop.findById(shopId)
+      .populate('shopOwnerId', 'name email mobile profilePicture');
+    
+    if (!shop) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Shop not found' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      shop 
+    });
+  } catch (error) {
+    console.error('Error fetching shop details:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error', 
+      error: error.message 
+    });
+  }
+});
+
+// Update shop status (admin only)
+router.patch('/shops/:shopId/status', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+  try {
+    const { shopId } = req.params;
+    const { status } = req.body;
+
+    const validStatuses = ['pending', 'processing', 'verified', 'rejected'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid status. Must be one of: pending, processing, verified, rejected' 
+      });
+    }
+
+    const shop = await Shop.findByIdAndUpdate(
+      shopId,
+      { 
+        status,
+        verifiedAt: status === 'verified' ? Date.now() : shop.verifiedAt
+      },
+      { new: true }
+    ).populate('shopOwnerId', 'name email mobile profilePicture');
+
+    if (!shop) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Shop not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Shop status updated to ${status} successfully`,
+      shop 
+    });
+  } catch (error) {
+    console.error('Error updating shop status:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Internal server error', 
