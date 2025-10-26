@@ -276,12 +276,17 @@ router.patch('/shops/:shopId/status', authMiddleware, roleMiddleware(['admin']),
       });
     }
 
+    // Build update object
+    const updateData = { status };
+    
+    // Only set verifiedAt if status is 'verified'
+    if (status === 'verified') {
+      updateData.verifiedAt = Date.now();
+    }
+
     const shop = await Shop.findByIdAndUpdate(
       shopId,
-      { 
-        status,
-        verifiedAt: status === 'verified' ? Date.now() : shop.verifiedAt
-      },
+      updateData,
       { new: true }
     ).populate('shopOwnerId', 'name email mobile profilePicture');
 
