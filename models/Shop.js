@@ -2,18 +2,34 @@
 const mongoose = require('mongoose');
 
 const shopSchema = new mongoose.Schema({
-  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  name: String,
-  address: String,
-  gstNumber: String,
-  licenseNumber: String,
-  bankDetails: {
-    accountNumber: String,
-    ifsc: String,
-    bankName: String,
+  shopOwnerId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
   },
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  shopName: { type: String, required: true },
+  description: { type: String },
+  location: { type: String, required: true },
+  ownerName: { type: String, required: true },
+  shopImage: { type: String },
+  shopLicense: { type: String },
+  gstCertificate: { type: String },
+  storagePermitCertificate: { type: String },
+  fssaiLicense: { type: String },
+  status: { 
+    type: String, 
+    enum: ['pending', 'processing', 'verified', 'rejected'],
+    default: 'pending'
+  },
   createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+  verifiedAt: { type: Date },
+});
+
+// Update timestamp before saving
+shopSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
 module.exports = mongoose.model('Shop', shopSchema);
