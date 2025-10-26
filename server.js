@@ -38,7 +38,7 @@ job.start();
 // Routes
 app.use('/auth', authRoutes);
 app.use('/admin', authMiddleware, adminRoutes);
-app.use('/admin/farmers', authMiddleware, adminFarmerRoutes);
+app.use('/admin', authMiddleware, adminFarmerRoutes);
 app.use('/dealer', authMiddleware, dealerRoutes);
 app.use('/farmer', authMiddleware, farmerRoutes);
 app.use('/farmer', authMiddleware, farmerProfileRoutes);
