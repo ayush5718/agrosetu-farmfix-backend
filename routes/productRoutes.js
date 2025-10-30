@@ -32,7 +32,10 @@ router.get('/dealer/list', roleMiddleware(['dealer']), async (req, res) => {
 });
 
 // Add new product (only if shop is verified)
-router.post('/dealer/add', roleMiddleware(['dealer']), upload.single('productImage'), async (req, res) => {
+router.post('/dealer/add', roleMiddleware(['dealer']), upload.fields([
+  { name: 'productImage', maxCount: 1 },
+  { name: 'productImages', maxCount: 5 }
+]), async (req, res) => {
   try {
     const { shopId, productName, category, description, price, quantity, warehouseQuantity, unit, isPublished } = req.body;
 
@@ -61,10 +64,16 @@ router.post('/dealer/add', roleMiddleware(['dealer']), upload.single('productIma
       });
     }
 
-    // Upload product image if provided
+    // Upload product images if provided
     let imageUrl = '';
-    if (req.file) {
-      imageUrl = await uploadToImageKit(req.file, 'agro/products');
+    const images = [];
+    if (req.files && req.files.productImage && req.files.productImage[0]) {
+      imageUrl = await uploadToImageKit(req.files.productImage[0], 'agro/products');
+    }
+    if (req.files && req.files.productImages && req.files.productImages.length > 0) {
+      for (const f of req.files.productImages.slice(0, 5)) {
+        images.push(await uploadToImageKit(f, 'agro/products'));
+      }
     }
 
     // Create new product
@@ -79,6 +88,7 @@ router.post('/dealer/add', roleMiddleware(['dealer']), upload.single('productIma
       warehouseQuantity: warehouseQuantity !== undefined ? parseInt(warehouseQuantity) : parseInt(quantity),
       unit: unit || 'kg',
       productImage: imageUrl,
+      productImages: images,
       isPublished: isPublished === 'true' || isPublished === true,
     });
 
@@ -99,7 +109,10 @@ router.post('/dealer/add', roleMiddleware(['dealer']), upload.single('productIma
 });
 
 // Update product
-router.put('/dealer/:productId', roleMiddleware(['dealer']), upload.single('productImage'), async (req, res) => {
+router.put('/dealer/:productId', roleMiddleware(['dealer']), upload.fields([
+  { name: 'productImage', maxCount: 1 },
+  { name: 'productImages', maxCount: 5 }
+]), async (req, res) => {
   try {
     const { productName, category, description, price, quantity, warehouseQuantity, unit, isPublished, isAvailable } = req.body;
     
@@ -126,9 +139,16 @@ router.put('/dealer/:productId', roleMiddleware(['dealer']), upload.single('prod
     if (isPublished !== undefined) product.isPublished = isPublished === 'true' || isPublished === true;
     if (isAvailable !== undefined) product.isAvailable = isAvailable === 'true' || isAvailable === true;
 
-    // Upload new image if provided
-    if (req.file) {
-      product.productImage = await uploadToImageKit(req.file, 'agro/products');
+    // Upload new images if provided
+    if (req.files && req.files.productImage && req.files.productImage[0]) {
+      product.productImage = await uploadToImageKit(req.files.productImage[0], 'agro/products');
+    }
+    if (req.files && req.files.productImages && req.files.productImages.length > 0) {
+      const imgs = [];
+      for (const f of req.files.productImages.slice(0,5)) {
+        imgs.push(await uploadToImageKit(f, 'agro/products'));
+      }
+      product.productImages = imgs;
     }
 
     await product.save();

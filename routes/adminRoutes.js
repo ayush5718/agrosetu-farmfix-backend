@@ -3,6 +3,7 @@ const User = require('../models/Users');
 const FarmerProfile = require('../models/FarmerProfile');
 const DealerProfile = require('../models/DealerProfile');
 const Shop = require('../models/Shop');
+const Product = require('../models/Product');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const router = express.Router();
 
@@ -309,6 +310,45 @@ router.patch('/shops/:shopId/status', authMiddleware, roleMiddleware(['admin']),
       message: 'Internal server error', 
       error: error.message 
     });
+  }
+});
+
+// List all products (admin only)
+router.get('/products', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+  try {
+    const { search, category } = req.query;
+    const query = {};
+    if (search) {
+      query.$or = [
+        { productName: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (category) query.category = category;
+
+    const products = await Product.find(query)
+      .populate('shopId', 'shopName location')
+      .populate('dealerId', 'name email mobile')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, products, totalCount: products.length });
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+  }
+});
+
+// Delete any product (admin only)
+router.delete('/products/:productId', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+    res.json({ success: true, message: 'Product deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
   }
 });
 

@@ -50,6 +50,10 @@ const productSchema = new mongoose.Schema({
   productImage: {
     type: String
   },
+  productImages: {
+    type: [String],
+    validate: [arr => arr.length <= 5, 'A maximum of 5 images allowed']
+  },
   isPublished: {
     type: Boolean,
     default: false
