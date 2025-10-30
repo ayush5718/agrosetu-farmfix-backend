@@ -18,8 +18,11 @@ const aiAdvisoryRoutes = require('./routes/aiAdvisoryRoutes');
 const carbonCreditRoutes = require('./routes/carbonCreditRoutes');
 const organicFarmingRoutes = require('./routes/organicFarmingRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const productRoutes = require('./routes/productRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 const job = require('./lib/corn');
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Connect MongoDB
 
@@ -50,6 +53,8 @@ app.use('/ai', authMiddleware, aiAdvisoryRoutes);
 app.use('/carbon-credits', authMiddleware, carbonCreditRoutes);
 app.use('/organic-farming', authMiddleware, organicFarmingRoutes);
 app.use('/notifications', authMiddleware, notificationRoutes);
+app.use('/products', productRoutes);
+app.use('/orders', orderRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).send("ok");
