@@ -63,8 +63,11 @@ router.post('/place', roleMiddleware(['farmer']), async (req, res) => {
         price: product.price
       });
 
-      // Update product quantity
+      // Update product quantities (visible stock and warehouse stock)
       product.quantity -= item.quantity;
+      if (typeof product.warehouseQuantity === 'number') {
+        product.warehouseQuantity = Math.max(0, product.warehouseQuantity - item.quantity);
+      }
       if (product.quantity === 0) {
         product.isAvailable = false;
       }

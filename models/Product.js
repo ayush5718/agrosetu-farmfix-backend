@@ -34,6 +34,13 @@ const productSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  // Visible only to dealer/admin; not exposed to farmer APIs
+  warehouseQuantity: {
+    type: Number,
+    required: false,
+    min: 0,
+    default: 0
+  },
   unit: {
     type: String,
     enum: ['kg', 'gram', 'litre', 'ml', 'piece', 'pack', 'other'],

@@ -34,7 +34,7 @@ router.get('/dealer/list', roleMiddleware(['dealer']), async (req, res) => {
 // Add new product (only if shop is verified)
 router.post('/dealer/add', roleMiddleware(['dealer']), upload.single('productImage'), async (req, res) => {
   try {
-    const { shopId, productName, category, description, price, quantity, unit, isPublished } = req.body;
+    const { shopId, productName, category, description, price, quantity, warehouseQuantity, unit, isPublished } = req.body;
 
     // Validation
     if (!shopId || !productName || !category || !price || !quantity) {
@@ -76,6 +76,7 @@ router.post('/dealer/add', roleMiddleware(['dealer']), upload.single('productIma
       description: description || '',
       price: parseFloat(price),
       quantity: parseInt(quantity),
+      warehouseQuantity: warehouseQuantity !== undefined ? parseInt(warehouseQuantity) : parseInt(quantity),
       unit: unit || 'kg',
       productImage: imageUrl,
       isPublished: isPublished === 'true' || isPublished === true,
@@ -100,7 +101,7 @@ router.post('/dealer/add', roleMiddleware(['dealer']), upload.single('productIma
 // Update product
 router.put('/dealer/:productId', roleMiddleware(['dealer']), upload.single('productImage'), async (req, res) => {
   try {
-    const { productName, category, description, price, quantity, unit, isPublished, isAvailable } = req.body;
+    const { productName, category, description, price, quantity, warehouseQuantity, unit, isPublished, isAvailable } = req.body;
     
     const product = await Product.findOne({
       _id: req.params.productId,
@@ -120,6 +121,7 @@ router.put('/dealer/:productId', roleMiddleware(['dealer']), upload.single('prod
     if (description !== undefined) product.description = description;
     if (price) product.price = parseFloat(price);
     if (quantity !== undefined) product.quantity = parseInt(quantity);
+    if (warehouseQuantity !== undefined) product.warehouseQuantity = parseInt(warehouseQuantity);
     if (unit) product.unit = unit;
     if (isPublished !== undefined) product.isPublished = isPublished === 'true' || isPublished === true;
     if (isAvailable !== undefined) product.isAvailable = isAvailable === 'true' || isAvailable === true;
@@ -208,6 +210,7 @@ router.get('/farmer/list', roleMiddleware(['farmer', 'admin']), async (req, res)
     }
 
     const products = await Product.find(query)
+      .select('-warehouseQuantity')
       .populate('shopId', 'shopName location ownerName shopImage')
       .populate('dealerId', 'name email mobile')
       .sort({ createdAt: -1 });
@@ -230,6 +233,7 @@ router.get('/farmer/list', roleMiddleware(['farmer', 'admin']), async (req, res)
 router.get('/:productId', authMiddleware, async (req, res) => {
   try {
     const product = await Product.findById(req.params.productId)
+      .select('-warehouseQuantity')
       .populate('shopId', 'shopName location ownerName shopImage')
       .populate('dealerId', 'name email mobile');
 
