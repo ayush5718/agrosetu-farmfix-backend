@@ -63,15 +63,36 @@ router.post('/place', roleMiddleware(['farmer']), async (req, res) => {
         price: product.price
       });
 
-      // Update product quantities (visible stock and warehouse stock)
-      product.quantity -= item.quantity;
-      if (typeof product.warehouseQuantity === 'number') {
-        product.warehouseQuantity = Math.max(0, product.warehouseQuantity - item.quantity);
+      // Reserve stock: Reduce both visible quantity and warehouse quantity
+      // Warehouse quantity is the internal stock that dealer tracks separately
+      // Both quantities should decrease when order is placed
+      const orderedQty = item.quantity;
+      
+      // Validate we have enough stock
+      if (product.quantity < orderedQty) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for ${product.productName}. Available: ${product.quantity}, Requested: ${orderedQty}`
+        });
       }
-      if (product.quantity === 0) {
+      
+      // Reduce visible stock (quantity) - this is what farmers see
+      product.quantity -= orderedQty;
+      
+      // Reduce warehouse stock (dealer's internal tracking)
+      // Always reduce warehouseQuantity if it exists, even if it becomes 0
+      if (typeof product.warehouseQuantity === 'number') {
+        product.warehouseQuantity = Math.max(0, product.warehouseQuantity - orderedQty);
+      }
+      
+      // Mark as unavailable if stock is exhausted
+      if (product.quantity <= 0) {
         product.isAvailable = false;
       }
+      
       await product.save();
+      
+      console.log(`✅ Stock reduced for product "${product.productName}": quantity=${product.quantity} (was ${product.quantity + orderedQty}), warehouseQuantity=${product.warehouseQuantity} (was ${product.warehouseQuantity + orderedQty})`);
     }
 
     // Get dealer ID from shop
@@ -177,13 +198,29 @@ router.patch('/farmer/:orderId/cancel', roleMiddleware(['farmer']), async (req, 
       });
     }
 
-    // Restore product quantities
+    // Restore product quantities (both visible stock and warehouse stock)
     for (const item of order.products) {
       const product = await Product.findById(item.productId);
       if (product) {
-        product.quantity += item.quantity;
-        product.isAvailable = true;
+        const restoredQty = item.quantity;
+        
+        // Restore visible stock (quantity)
+        product.quantity += restoredQty;
+        
+        // Restore warehouse stock if it was previously set
+        // We restore to warehouseQuantity as well to maintain dealer's internal tracking
+        if (typeof product.warehouseQuantity === 'number') {
+          product.warehouseQuantity += restoredQty;
+        }
+        
+        // Make product available again if stock is restored
+        if (product.quantity > 0) {
+          product.isAvailable = true;
+        }
+        
         await product.save();
+        
+        console.log(`Stock restored for product ${product.productName}: quantity=${product.quantity}, warehouseQuantity=${product.warehouseQuantity}`);
       }
     }
 
@@ -256,6 +293,35 @@ router.patch('/dealer/:orderId/status', roleMiddleware(['dealer']), async (req, 
     }
 
     const oldStatus = order.status;
+    
+    // If order is being cancelled, restore stock
+    if (status === 'cancelled' && oldStatus !== 'cancelled') {
+      // Restore product quantities (both visible stock and warehouse stock)
+      for (const item of order.products) {
+        const product = await Product.findById(item.productId);
+        if (product) {
+          const restoredQty = item.quantity;
+          
+          // Restore visible stock (quantity)
+          product.quantity += restoredQty;
+          
+          // Restore warehouse stock
+          if (typeof product.warehouseQuantity === 'number') {
+            product.warehouseQuantity += restoredQty;
+          }
+          
+          // Make product available again if stock is restored
+          if (product.quantity > 0) {
+            product.isAvailable = true;
+          }
+          
+          await product.save();
+          
+          console.log(`Stock restored (dealer cancelled order) for product ${product.productName}: quantity=${product.quantity}, warehouseQuantity=${product.warehouseQuantity}`);
+        }
+      }
+    }
+    
     order.status = status;
     order.updatedAt = Date.now();
     await order.save();

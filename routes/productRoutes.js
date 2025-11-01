@@ -76,6 +76,12 @@ router.post('/dealer/add', roleMiddleware(['dealer']), upload.fields([
       }
     }
 
+    // Parse quantities
+    const parsedQuantity = parseInt(quantity);
+    const parsedWarehouseQuantity = warehouseQuantity !== undefined && warehouseQuantity !== '' 
+      ? parseInt(warehouseQuantity) 
+      : parsedQuantity; // Default warehouse quantity to same as quantity if not provided
+
     // Create new product
     const product = new Product({
       shopId,
@@ -84,13 +90,16 @@ router.post('/dealer/add', roleMiddleware(['dealer']), upload.fields([
       category,
       description: description || '',
       price: parseFloat(price),
-      quantity: parseInt(quantity),
-      warehouseQuantity: warehouseQuantity !== undefined ? parseInt(warehouseQuantity) : parseInt(quantity),
+      quantity: parsedQuantity,
+      warehouseQuantity: parsedWarehouseQuantity, // Dealer's internal stock tracking
       unit: unit || 'kg',
       productImage: imageUrl,
       productImages: images,
       isPublished: isPublished === 'true' || isPublished === true,
+      isAvailable: parsedQuantity > 0, // Available if there's stock
     });
+
+    console.log(`Product created: ${productName}, quantity=${parsedQuantity}, warehouseQuantity=${parsedWarehouseQuantity}`);
 
     await product.save();
 
