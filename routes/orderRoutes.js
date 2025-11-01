@@ -16,13 +16,22 @@ router.use(authMiddleware);
 // Place order (farmer)
 router.post('/place', roleMiddleware(['farmer']), async (req, res) => {
   try {
-    const { shopId, products, paymentMode } = req.body;
+    const { shopId, products, paymentMode, deliveryAddress } = req.body;
 
     // Validation
     if (!shopId || !products || !Array.isArray(products) || products.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Shop ID and products are required'
+      });
+    }
+
+    // Validate delivery address
+    if (!deliveryAddress || !deliveryAddress.fullName || !deliveryAddress.mobile || 
+        !deliveryAddress.addressLine1 || !deliveryAddress.city || !deliveryAddress.state || !deliveryAddress.pincode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery address is required (fullName, mobile, addressLine1, city, state, pincode)'
       });
     }
 
@@ -104,13 +113,24 @@ router.post('/place', roleMiddleware(['farmer']), async (req, res) => {
       });
     }
 
-    // Create order
+    // Create order with delivery address
     const order = new Order({
       farmerId: req.user._id,
       dealerId: shop.shopOwnerId,
       shopId,
       products: orderProducts,
       paymentMode: paymentMode || 'cod',
+      deliveryAddress: {
+        label: deliveryAddress.label || 'Home',
+        fullName: deliveryAddress.fullName,
+        mobile: deliveryAddress.mobile,
+        addressLine1: deliveryAddress.addressLine1,
+        addressLine2: deliveryAddress.addressLine2 || '',
+        landmark: deliveryAddress.landmark || '',
+        city: deliveryAddress.city,
+        state: deliveryAddress.state,
+        pincode: deliveryAddress.pincode,
+      },
       totalAmount,
       status: 'placed'
     });

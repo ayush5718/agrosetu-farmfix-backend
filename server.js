@@ -20,6 +20,7 @@ const organicFarmingRoutes = require('./routes/organicFarmingRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const addressRoutes = require('./routes/addressRoutes');
 const job = require('./lib/corn');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -55,6 +56,7 @@ app.use('/organic-farming', authMiddleware, organicFarmingRoutes);
 app.use('/notifications', authMiddleware, notificationRoutes);
 app.use('/products', productRoutes);
 app.use('/orders', orderRoutes);
+app.use('/addresses', addressRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).send("ok");
